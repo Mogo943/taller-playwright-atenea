@@ -1,0 +1,26 @@
+{
+  "name": "taller-playwright-atenea",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mogo943/taller-playwright-atenea.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Mogo943/taller-playwright-atenea/issues"
+  },
+  "homepage": "https://github.com/Mogo943/taller-playwright-atenea#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^25.2.3"
+  },
+  "dependencies": {
+    "mongodb": "^7.1.0"
+  }
+}
