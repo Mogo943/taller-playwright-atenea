@@ -1,0 +1,12 @@
+{
+    "usuarioValido": {
+        "firstName": "Sofía",
+        "lastName": "Martínez",
+        "email": "sofia.martinez@example.com",
+        "password": "S0fia#2024!"
+    },
+    "usuarioRegistrado": {
+        "email": "usuario21771178692129@gmail.com",
+        "password": "S0fia#2024!"
+    }
+}
