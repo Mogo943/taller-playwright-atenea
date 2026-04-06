@@ -1,10 +1,10 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, request } from '@playwright/test';
 import { RegisterPage } from '../pages/reigsterPage';
 import TestData from '../data/testData.json';
+import { BackendUtils } from '../utils/backendUtils';
 
 let registerPage: RegisterPage;
 let validUser = TestData.usuarioValido;
-// Desestructuramos para tener un objeto base sin el email fijo
 const { email, ...validUserWithOutemail } = validUser;
 
 test.beforeEach(async ({ page }) => {
@@ -91,4 +91,72 @@ test('TC-6 Verificar que un usuario no se registre con un usuario ya existente',
     await expect(page.getByText('Email already in use')).toBeVisible();
     await expect(page.getByText('Registro exitoso!')).not.toBeVisible();
   });
+});
+
+test('TC-8 Verificar respuesta 201 de la API', async ({ page }) => {
+  // Generamos el email dinámico fuera de los steps para tenerlo disponible en el scope
+  const emailDinamico = 'usuario2' + Date.now().toString() + '@gmail.com';
+
+  await test.step('Llenar formulario con email único', async () => {
+    await registerPage.completarFormularioDeRegistro({ email: emailDinamico, ...validUserWithOutemail });
+  });
+
+  await test.step('Verificar respuesta de la API', async () => {
+    const responsePromise = page.waitForResponse(res =>
+      res.url().includes('/api/auth/signup') && res.status() === 201
+    );
+
+    await registerPage.registerButton.click();
+
+    const response = await responsePromise;
+    const responseBody = await response.json();
+
+    expect(response.status()).toBe(201);
+    expect(responseBody).toHaveProperty('token');
+    expect(typeof responseBody.token).toBe('string');
+    expect(responseBody).toHaveProperty('user');
+    expect(responseBody.user).toEqual(expect.objectContaining({
+      id: expect.any(String),
+      firstName: TestData.usuarioValido.firstName,
+      lastName: TestData.usuarioValido.lastName,
+      email: emailDinamico,
+    }));
+
+    await expect(page.getByText('Registro exitoso!')).toBeVisible();
+  });
+});
+
+test('TC-9 Generar singup desde la API', async ({ page, request }) => {
+  const emailDinamico = 'usuario2' + Date.now().toString() + '@gmail.com';
+
+  const responseBackend = await BackendUtils.crearUsuarioPorAPI(request, { email: emailDinamico, ...validUserWithOutemail });
+
+  const responseBody = await responseBackend.json();
+
+  expect(responseBody).toHaveProperty('token');
+  expect(typeof responseBody.token).toBe('string');
+  expect(responseBody).toHaveProperty('user');
+  expect(responseBody.user).toEqual(expect.objectContaining({
+    id: expect.any(String),
+    firstName: TestData.usuarioValido.firstName,
+    lastName: TestData.usuarioValido.lastName,
+    email: emailDinamico,
+  }));
+});
+
+test('TC-10 Verificar comportamientos del front ante un error 500 en el registro', async ({ page, request }) => {
+  const emailDinamico = 'carlosmogo94@gmail.com'
+
+  await page.route('**/api/auth/signup', route => {
+    route.fulfill({
+      status: 500,
+      contentType: 'application/json',
+      body: JSON.stringify({ message: 'Internal Server Error' }),
+    });
+  });
+
+  await registerPage.completarFormularioDeRegistro({ email: emailDinamico, ...validUserWithOutemail })
+  await registerPage.registerButton.click();
+
+  await expect(page.getByText('Error interno')).toBeVisible();
 });
